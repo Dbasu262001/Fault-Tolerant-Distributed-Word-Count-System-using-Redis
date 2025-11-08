@@ -21,11 +21,14 @@ class Worker(ABC):
         self.pid = -1
         self.crash = kwargs["crash"] if "crash" in kwargs else False
         self.slow = kwargs["slow"] if "slow" in kwargs else False
-
+        self.process: Process | None 
+    def is_alive(self) -> bool:
+        return self.process.is_alive() if self.process else False
     def create_and_run(self, **kwargs: Any) -> None:
         proc = Process(target=self.run, kwargs=kwargs)
         proc.start()
         self.pid = proc.pid
+        self.process = proc
         self.name = f"worker-{self.pid}"
         logging.info(f"Started {self.name} with pid {self.pid}")
 

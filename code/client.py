@@ -17,8 +17,10 @@ workers: list[WcWorker] = []
 def sigterm_handler(signum, frame):
     logging.info("Killing main process!")
     for w in workers:
-        w.kill()
-    sys.exit()
+        if(w.is_alive()):
+            os.kill(w.pid,signal.SIGTERM)
+    for w in workers:
+        w.process.join()
 
 
 if __name__ == "__main__":
@@ -62,16 +64,8 @@ if __name__ == "__main__":
         # rds.restart(downtime=config["REDIS_DOWNTIME"])
     
     logging.info("No more pending work detected.")
-    for w in workers:
-        w.kill()
-
-    for w in workers:
-        try:
-            pid, status = os.waitpid(w.pid, 0)  # Block until the worker exits
-            logging.debug(f"Worker {pid} exited with status {status}")
-        except ChildProcessError:
-            logging.warning(f"Worker {w.pid} already exited.")
+    sigterm_handler(signal.SIGTERM, None)
     for word, c in rds.top(3):
         logging.info(f"{word.decode()}: {c}")
     logging.info("All work complete, exiting.")
-    os._exit(0)
+    sys.exit()

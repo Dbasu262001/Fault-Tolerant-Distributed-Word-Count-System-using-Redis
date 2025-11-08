@@ -18,7 +18,9 @@ class WcWorker(Worker):
         consumer_name = f"{Worker.GROUP}-{os.getpid()}"
         # logging.info(f"{consumer_name} started")
         last_autoclaim = time.time()
-        while WcWorker.should_exit != True:
+        signal.signal(signal.SIGTERM, self.signal_handler)
+        loop =True
+        while WcWorker.should_exit != True and loop:
             try:
                 msgs = rds.rds.xreadgroup(
                     Worker.GROUP,
@@ -30,7 +32,7 @@ class WcWorker(Worker):
                 # logging.debug(f"{consumer_name} read messages: {msgs}")
                 if not msgs:
                     continue
-                for stream_name, messages in msgs:
+                for _, messages in msgs:
                     for message_id, fields in messages:
                         decoded_fields = {
                             k.decode(): v.decode() for k, v in fields.items()
@@ -40,7 +42,7 @@ class WcWorker(Worker):
                         wc = {}
                         if self.crash:
                             logging.info(f"{consumer_name} crashing as requested with file {fname}")
-                            os.kill(os.getpid(), signal.SIGKILL)
+                            break
                         if self.slow:
                             logging.info(f"{consumer_name} sleeping as requested to simulate straggler with file {fname}")
                             time.sleep(10)
@@ -58,7 +60,9 @@ class WcWorker(Worker):
                         logging.info(
                             f"{consumer_name} finished processing file {fname}"
                         )
-                      
+                if WcWorker.should_exit or self.crash:
+                    logging.info(f"{consumer_name} terminatig because of exit signal {WcWorker.should_exit} or crash {self.crash}.")
+                    break   
                 
                 if time.time() - last_autoclaim <3:
                     continue
@@ -73,13 +77,14 @@ class WcWorker(Worker):
                 logging.info(f"{consumer_name} autoclaim result: {result}") 
                 # Handle either 2- or 3-element return
                 if isinstance(result, (list, tuple)) and len(result) >= 2:
-                    next_id = result[0]
+                    # next_id = result[0]
                     pending_messages = result[1]
                 else:
-                    next_id, pending_messages = None, []
+                    _, pending_messages = None, []
 
                 if not pending_messages:
                     continue
+            
                 for message_id, fields in pending_messages:
                     decoded_fields = {
                         k.decode(): v.decode() for k, v in fields.items()
@@ -106,19 +111,13 @@ class WcWorker(Worker):
 
             except Exception as e:
                 logging.error(f"Error in {consumer_name}: {e}")
-            if WcWorker.should_exit:
-                sys.exit()
-        logging.info(f"Worker {os.getpid()} shutting down cleanly")
-        sys.exit(0)
-        logging.info(f"Worker {os.getpid()} exiting cleanly.")
-        os._exit(0)
     @staticmethod
-    def _signal_handler(signum, frame):
+    def signal_handler(signum, frame):
         logging.info(f"Worker {os.getpid()} received SIGTERM — shutting down cleanly.")
         WcWorker.should_exit = True
-    def kill(self) -> None:
-        logging.info(f"Killing worker {self.pid}")
-        try:
-            os.kill(self.pid,signal.SIGKILL)
-        except Exception as e:
-            logging.error(f"Failed to kill worker {self.pid}: {e}")
+    # def kill(self) -> None:
+    #     logging.info(f"Killing worker {self.pid}")
+    #     try:
+    #         os.kill(self.pid,signal.SIGKILL)
+    #     except Exception as e:
+    #         logging.error(f"Failed to kill worker {self.pid}: {e}")
