@@ -5,10 +5,10 @@
     "N_CRASHING_WORKERS": 2,
     "N_SLEEPING_WORKERS": 1,
 
-    "DATA_PATH":  "/home/baadalvm/data/*.csv",
-    "IN":  "files",
+    "DATA_PATH":  "/home/semrahd/Desktop/lab1/data/*.csv",
+    "IN":  "files1",
     "FNAME":  "fname",
-    "COUNT":  "count",
+    "COUNT":  "count1",
 
     "CHECKPOINT_INTERVAL": 2,
     "REDIS_DOWNTIME": 1
