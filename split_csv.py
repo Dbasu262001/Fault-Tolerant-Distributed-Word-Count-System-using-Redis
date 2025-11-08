@@ -1,7 +1,7 @@
 import pandas as pd
 import sys
 
-def split_csv(input_file, output_dir, num_files, rows_per_file=10000):
+def split_csv(input_file, output_dir, num_files, rows_per_file=50370):
     # Read the CSV file into a DataFrame
     df = pd.read_csv(input_file)
     

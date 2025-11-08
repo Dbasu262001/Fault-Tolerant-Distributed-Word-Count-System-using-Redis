@@ -16,7 +16,6 @@ class MyRedis:
             host="localhost", port=6380, password=None, db=0, decode_responses=False
         )
         self.rds.flushall()
-        self.rds.xgroup_create(config["IN"], Worker.GROUP, id="0", mkstream=True)
         lua_path = os.path.join(os.path.dirname(__file__), "mylib.lua")
         with open(lua_path, "r") as f:
             lua_script = f.read()
@@ -24,16 +23,21 @@ class MyRedis:
 
     def add_file(self, fname: str):
         self.rds.xadd(config["IN"], {config["FNAME"]: fname})
-
+    def create_xgroup(self):
+        try:
+            self.rds.xgroup_create(config["IN"], Worker.GROUP, id="0", mkstream=True)
+        except Exception as e:
+            logging.info(f"XGROUP creation failed or already exists: {e}")
     def update_word_counts_and_ack(self, wc: dict[str, int], message_id: str):
         """Atomically update word counts and acknowledge message."""
         args = [Worker.GROUP, message_id]
         for word, count in wc.items():
             args.extend([word, count])
+        keys = [config["COUNT"], config["IN"], config["PROCESSED"]]
 
         logging.debug(f"Running Lua with KEYS={ [config['COUNT'], config['IN']] }")
         result = self.update_and_ack_script(
-            keys=[config["COUNT"], config["IN"]], args=args
+            keys=keys, args=args
         )
         logging.debug(f"Lua result: {result}")
 

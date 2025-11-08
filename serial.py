@@ -9,7 +9,7 @@ abs_files=[os.path.join(pth, f) for pth, dirs, files in os.walk(DIR) for f in fi
 wc = {}
 
 for filename in abs_files:
-    print(filename)
+    # print(filename)
     df = pd.read_csv(filename, lineterminator='\n')
     df["text"] = df["text"].astype(str)
     for text in df.loc[:,"text"]:

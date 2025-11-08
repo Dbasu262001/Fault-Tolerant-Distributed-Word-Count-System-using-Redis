@@ -37,6 +37,7 @@ if __name__ == "__main__":
 
     for file in glob.glob(config["DATA_PATH"]):
         rds.add_file(file)
+    rds.create_xgroup()
     signal.signal(signal.SIGTERM, sigterm_handler)
 
 
@@ -45,18 +46,16 @@ if __name__ == "__main__":
         workers.append(WcWorker())
 
     for i in range(config["N_CRASHING_WORKERS"]):
-        workers.append(WcWorker(crash=False))
+        workers.append(WcWorker(crash=True))
 
     for i in range(config["N_SLEEPING_WORKERS"]):
-        workers.append(WcWorker(slow=False))
+        workers.append(WcWorker(slow=True))
 
     for w in workers:
         w.create_and_run(rds=rds)
 
     create_checkpoints(rds, config["CHECKPOINT_INTERVAL"])
     logging.debug("Created all the workers")
-    time.sleep(1)  # Give workers time to start and read some messages
-
     while rds.is_pending():
         logging.info("Work still pending, sleeping before checking again...")
         time.sleep(4)

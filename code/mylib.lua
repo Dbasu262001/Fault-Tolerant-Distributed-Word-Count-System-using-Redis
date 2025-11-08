@@ -19,8 +19,14 @@ local zkey = KEYS[1]
 local stream = KEYS[2]
 local group = ARGV[1]
 local msgid = ARGV[2]
+local processed = KEYS[3]
 
 -- Apply ZINCRBY for each word/count pair
+if redis.call('SISMEMBER', processed, msgid) == 1 then
+  -- Message already processed
+  return {0, 0}
+end
+redis.call('SADD', processed, msgid)
 local updates = 0
 for i = 3, #ARGV, 2 do
   local word = ARGV[i]

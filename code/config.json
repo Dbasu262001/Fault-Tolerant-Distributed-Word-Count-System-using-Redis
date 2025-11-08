@@ -1,15 +1,15 @@
 {
     "LOGFILE": "/tmp/wc.log",
 
-    "N_NORMAL_WORKERS": 5,
+    "N_NORMAL_WORKERS": 1,
     "N_CRASHING_WORKERS": 2,
-    "N_SLEEPING_WORKERS": 1,
+    "N_SLEEPING_WORKERS": 2,
 
     "DATA_PATH":  "/home/semrahd/Desktop/lab1/data/*.csv",
-    "IN":  "files1",
+    "IN":  "files4",
     "FNAME":  "fname",
-    "COUNT":  "count1",
-
+    "COUNT":  "count2",
+    "PROCESSED": "processed_msgs",
     "CHECKPOINT_INTERVAL": 2,
     "REDIS_DOWNTIME": 1
 }
